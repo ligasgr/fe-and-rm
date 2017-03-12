@@ -1,9 +1,10 @@
 package pt1.week5
 
 import breeze.linalg.DenseMatrix
-import org.scalatest.{FunSuite, Matchers}
+import common.MatrixMatchers
+import org.scalatest.FunSuite
 
-class ShortLatticeSpec extends FunSuite with Matchers {
+class ShortLatticeSpec extends FunSuite with MatrixMatchers {
 
   test("lattice is as expected") {
     assertMatricesEqual(
