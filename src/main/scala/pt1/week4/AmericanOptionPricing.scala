@@ -4,13 +4,23 @@ import breeze.linalg.{DenseMatrix, DenseVector, _}
 
 import scala.math.{exp, sqrt}
 
-object EuropeanOptionPricing {
+object AmericanOptionPricing {
 
   def calculate(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double,
                 numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean): Double = {
     val result = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)
-
     result.apply(0, 0)
+  }
+
+  def earliest(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double,
+                numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean): Int = {
+    val resultEuropean = EuropeanOptionPricing.calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)
+    val resultAmerican = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)
+
+    val americanIsBigger = resultAmerican :== resultEuropean
+    val notEqualIndexes = americanIsBigger.findAll(v => !v)
+    val first = notEqualIndexes.minBy(_._1)
+    first._1
   }
 
   def calculatePricingMatrix(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean) = {
@@ -32,7 +42,8 @@ object EuropeanOptionPricing {
       val previousColumn = result(::, i + 1)
       val previousColumnShiftedOneDown = DenseVector.vertcat(previousColumn(1 until previousColumn.length), DenseVector.zeros[Double](1))
       val currentColumn = ((previousColumnShiftedOneDown * q) + (previousColumn * p)) / periodRelatedDivisor
-      result(::, i) += currentColumn
+      val profit = profitAtTheMoment(zero, sharePriceLattice, strikePrice, putCallMultiplier, i)
+      result(::, i) += max(profit, currentColumn)
     }
     result
   }
