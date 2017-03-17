@@ -4,7 +4,7 @@ import breeze.linalg.DenseMatrix
 import common.MatrixMatchers
 import org.scalatest.FunSuite
 
-class ShortLatticeSpec extends FunSuite with MatrixMatchers {
+class ShortRateLatticeSpec extends FunSuite with MatrixMatchers {
 
   test("lattice is as expected") {
     assertMatricesEqual(
