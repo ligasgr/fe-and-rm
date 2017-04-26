@@ -12,8 +12,11 @@ object AmericanOptionPricing {
     result.apply(0, 0)
   }
 
-  def calculateProfitFromSaleAtTheMoment(sharePriceLattice: DenseMatrix[Double], numberOfPeriods: Int, strikePrice: Double, isPut: Boolean) = {
+  def calculateProfitFromSaleAtTheMoment(originalSharePriceLattice: DenseMatrix[Double], numberOfPeriods: Int, strikePrice: Double, isPut: Boolean) = {
     val n = numberOfPeriods + 1
+    val sharePriceLattice =
+      if (originalSharePriceLattice.rows == n && originalSharePriceLattice.cols == n) originalSharePriceLattice
+      else copyWithSize(originalSharePriceLattice, n, n)
     val putCallMultiplier: Double = if (isPut) -1 else 1
     val result = DenseMatrix.zeros[Double](n, n)
     val zero = DenseVector.zeros[Double](n)
@@ -37,10 +40,13 @@ object AmericanOptionPricing {
     first._2
   }
 
-  def calculatePricingMatrix(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean) = {
+  def calculatePricingMatrix(originalSharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean) = {
     val u: Double = exp(volatility * sqrt(termInYears / numberOfPeriods))
     val d: Double = 1 / u
     val n = numberOfPeriods + 1
+    val sharePriceLattice =
+      if (originalSharePriceLattice.rows == n && originalSharePriceLattice.cols == n) originalSharePriceLattice
+      else copyWithSize(originalSharePriceLattice, n, n)
     val q: Double = (exp((interestRate - dividendYield) * termInYears / numberOfPeriods) - d) / (u - d)
     val p: Double = 1 - q
     val periodRelatedDivisor: Double = exp(interestRate * termInYears / numberOfPeriods)
@@ -65,5 +71,14 @@ object AmericanOptionPricing {
   private def profitAtTheMoment(zero: DenseVector[Double], sharePriceLattice: DenseMatrix[Double],
                                 strikePrice: Double, putCallMultiplier: Double, columnIndex: Int) = {
     max(zero, (sharePriceLattice(::, columnIndex) - strikePrice) * putCallMultiplier)
+  }
+
+  private def copyWithSize(matrix: DenseMatrix[Double], rows: Int, cols: Int) = {
+    val result = DenseMatrix.zeros[Double](rows, cols)
+    for (i <- 0 until cols) {
+      val column = matrix(::, i)
+      result(::, i) += column.slice(0, rows)
+    }
+    result
   }
 }
