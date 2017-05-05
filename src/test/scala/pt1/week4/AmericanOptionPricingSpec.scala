@@ -22,7 +22,7 @@ class AmericanOptionPricingSpec extends FunSuite with Matchers {
   }
 
   test("earliest optimal for put option") {
-    val earliest = AmericanOptionPricing.earliest(sharePriceLattice, termInYears = 0.25, volatility = 0.3,
+    val earliest = AmericanOptionPricing.earliestExercise(sharePriceLattice, termInYears = 0.25, volatility = 0.3,
       numberOfPeriods = 15, interestRate = 0.02, dividendYield = 0.01, strikePrice = 110.0, isPut = true)
 
     earliest shouldBe 5

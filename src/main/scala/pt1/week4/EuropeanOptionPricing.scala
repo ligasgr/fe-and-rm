@@ -13,7 +13,7 @@ object EuropeanOptionPricing {
     result.apply(0, 0)
   }
 
-  def calculatePricingMatrix(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean) = {
+  private def calculatePricingMatrix(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean) = {
     val u: Double = exp(volatility * sqrt(termInYears / numberOfPeriods))
     val d: Double = 1 / u
     val n = numberOfPeriods + 1

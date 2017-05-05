@@ -12,7 +12,7 @@ object FuturesPricing {
     result.apply(0, 0)
   }
 
-  def calculatePricingMatrix(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double) = {
+  private[week4] def calculatePricingMatrix(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double) = {
         val u: Double = exp(volatility * sqrt(termInYears / numberOfPeriods))
         val d: Double = 1 / u
         val n = numberOfPeriods + 1

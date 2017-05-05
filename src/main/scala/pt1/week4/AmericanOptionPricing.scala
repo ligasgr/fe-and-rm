@@ -12,7 +12,19 @@ object AmericanOptionPricing {
     result.apply(0, 0)
   }
 
-  def calculateProfitFromSaleAtTheMoment(originalSharePriceLattice: DenseMatrix[Double], numberOfPeriods: Int, strikePrice: Double, isPut: Boolean) = {
+  def earliestExercise(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double,
+                       numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean): Int = {
+    val resultAmerican = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)
+    val gainOnSaleWithStrikePrice = calculateProfitFromSaleAtTheMoment(sharePriceLattice, numberOfPeriods, strikePrice, isPut)
+
+    val whateverBigger = max(resultAmerican, gainOnSaleWithStrikePrice)
+    val isOptimalToExercise = gainOnSaleWithStrikePrice :== whateverBigger
+    val notEqualIndexes = isOptimalToExercise.findAll(v => v)
+    val first = notEqualIndexes.filter(pair => pair._1 <= pair._2).minBy(_._2)
+    first._2
+  }
+
+  private[week4] def calculateProfitFromSaleAtTheMoment(originalSharePriceLattice: DenseMatrix[Double], numberOfPeriods: Int, strikePrice: Double, isPut: Boolean) = {
     val n = numberOfPeriods + 1
     val sharePriceLattice =
       if (originalSharePriceLattice.rows == n && originalSharePriceLattice.cols == n) originalSharePriceLattice
@@ -28,19 +40,7 @@ object AmericanOptionPricing {
     result
   }
 
-  def earliest(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double,
-               numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean): Int = {
-    val resultAmerican = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)
-    val gainOnSaleWithStrikePrice = calculateProfitFromSaleAtTheMoment(sharePriceLattice, numberOfPeriods, strikePrice, isPut)
-
-    val whateverBigger = max(resultAmerican, gainOnSaleWithStrikePrice)
-    val isOptimalToExercise = gainOnSaleWithStrikePrice :== whateverBigger
-    val notEqualIndexes = isOptimalToExercise.findAll(v => v)
-    val first = notEqualIndexes.filter(pair => pair._1 <= pair._2).minBy(_._2)
-    first._2
-  }
-
-  def calculatePricingMatrix(originalSharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean) = {
+  private def calculatePricingMatrix(originalSharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean) = {
     val u: Double = exp(volatility * sqrt(termInYears / numberOfPeriods))
     val d: Double = 1 / u
     val n = numberOfPeriods + 1
