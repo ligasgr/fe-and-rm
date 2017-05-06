@@ -13,6 +13,34 @@ object EuropeanOptionPricing {
     result.apply(0, 0)
   }
 
+  def calculateChooser(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double,
+                numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, choosingPeriod: Int): Double = {
+    val pricingPut = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, true)
+    val pricingCall = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, false)
+
+    val maxOfPutAndCall = max(pricingPut(::, choosingPeriod), pricingCall(::, choosingPeriod))
+
+    val u: Double = exp(volatility * sqrt(termInYears / numberOfPeriods))
+    val d: Double = 1 / u
+    val q: Double = (exp((interestRate - dividendYield) * termInYears / numberOfPeriods) - d) / (u - d)
+    val p: Double = 1 - q
+    val periodRelatedDivisor: Double = exp(interestRate * termInYears / numberOfPeriods)
+
+    val result = DenseMatrix.zeros[Double](choosingPeriod + 1, choosingPeriod + 1)
+    val lastColumnIndex = choosingPeriod
+    result(::, lastColumnIndex) := maxOfPutAndCall.slice(0, choosingPeriod + 1)
+
+    val columnsFromPriorToLastOneDownToFirst = (lastColumnIndex - 1) to 0 by -1
+    for (i <- columnsFromPriorToLastOneDownToFirst) {
+      val previousColumn = result(::, i + 1)
+      val previousColumnShiftedOneDown = DenseVector.vertcat(previousColumn(1 until previousColumn.length), DenseVector.zeros[Double](1))
+      val currentColumn = ((previousColumnShiftedOneDown * q) + (previousColumn * p)) / periodRelatedDivisor
+      result(::, i) += currentColumn
+    }
+
+    result.apply(0, 0)
+  }
+
   private def calculatePricingMatrix(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double, numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean) = {
     val u: Double = exp(volatility * sqrt(termInYears / numberOfPeriods))
     val d: Double = 1 / u
