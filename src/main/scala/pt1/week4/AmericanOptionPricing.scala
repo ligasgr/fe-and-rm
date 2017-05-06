@@ -8,32 +8,33 @@ object AmericanOptionPricing {
 
   def calculate(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double,
                 numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean)
-               (implicit exercisePeriod: Int = numberOfPeriods): Double = {
-    val result = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)(exercisePeriod)
+               (implicit maturity: Int = numberOfPeriods): Double = {
+    val result = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)(maturity)
     result.apply(0, 0)
   }
 
   def earliestExercise(sharePriceLattice: DenseMatrix[Double], termInYears: Double, volatility: Double,
-                       numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice: Double, isPut: Boolean): Int = {
-    val resultAmerican = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)(numberOfPeriods)
-    val gainOnSaleWithStrikePrice = calculateProfitFromSaleAtTheMoment(sharePriceLattice, numberOfPeriods, strikePrice, isPut)
+                       numberOfPeriods: Int, interestRate: Double, dividendYield: Double, strikePrice:
+                       Double, isPut: Boolean)(implicit maturity: Int = numberOfPeriods): Int = {
+    val pricingMatrix = calculatePricingMatrix(sharePriceLattice, termInYears, volatility, numberOfPeriods, interestRate, dividendYield, strikePrice, isPut)(maturity)
+    val gainOnSaleWithStrikePrice = calculateProfitFromSaleAtTheMoment(sharePriceLattice, maturity, strikePrice, isPut)
 
-    val whateverBigger = max(resultAmerican, gainOnSaleWithStrikePrice)
+    val whateverBigger = max(pricingMatrix, gainOnSaleWithStrikePrice)
     val isOptimalToExercise = gainOnSaleWithStrikePrice :== whateverBigger
     val notEqualIndexes = isOptimalToExercise.findAll(v => v)
-    val first = notEqualIndexes.filter(pair => pair._1 <= pair._2).minBy(_._2)
+    val first = notEqualIndexes.filter(pair => pair._1 <= pair._2 && gainOnSaleWithStrikePrice(pair._1, pair._2) != 0.0).minBy(_._2)
     first._2
   }
 
-  private[week4] def calculateProfitFromSaleAtTheMoment(originalSharePriceLattice: DenseMatrix[Double], numberOfPeriods: Int, strikePrice: Double, isPut: Boolean) = {
-    val n = numberOfPeriods + 1
+  private[week4] def calculateProfitFromSaleAtTheMoment(originalSharePriceLattice: DenseMatrix[Double], maturity: Int, strikePrice: Double, isPut: Boolean) = {
+    val n = maturity + 1
     val sharePriceLattice =
       if (originalSharePriceLattice.rows == n && originalSharePriceLattice.cols == n) originalSharePriceLattice
       else copyWithSize(originalSharePriceLattice, n, n)
     val putCallMultiplier: Double = if (isPut) -1 else 1
     val result = DenseMatrix.zeros[Double](n, n)
     val zero = DenseVector.zeros[Double](n)
-    val lastColumnIndex = numberOfPeriods
+    val lastColumnIndex = maturity
 
     for (i <- 0 to lastColumnIndex) {
       result(::, i) := profitAtTheMoment(zero, sharePriceLattice, strikePrice, putCallMultiplier, i)
@@ -43,21 +44,21 @@ object AmericanOptionPricing {
 
   private def calculatePricingMatrix(originalSharePriceLattice: DenseMatrix[Double], termInYears: Double,
                                      volatility: Double, numberOfPeriods: Int, interestRate: Double,
-                                     dividendYield: Double, strikePrice: Double, isPut: Boolean)(exercisePeriod: Int) = {
+                                     dividendYield: Double, strikePrice: Double, isPut: Boolean)(maturity: Int) = {
     val u: Double = exp(volatility * sqrt(termInYears / numberOfPeriods))
     val d: Double = 1 / u
     val q: Double = (exp((interestRate - dividendYield) * termInYears / numberOfPeriods) - d) / (u - d)
     val p: Double = 1 - q
     val periodRelatedDivisor: Double = exp(interestRate * termInYears / numberOfPeriods)
     val putCallMultiplier: Double = if (isPut) -1 else 1
-    val n = exercisePeriod + 1
+    val n = maturity + 1
     val sharePriceLattice =
       if (originalSharePriceLattice.rows == n && originalSharePriceLattice.cols == n) originalSharePriceLattice
       else copyWithSize(originalSharePriceLattice, n, n)
 
     val result = DenseMatrix.zeros[Double](n, n)
     val zero = DenseVector.zeros[Double](n)
-    val lastColumnIndex = exercisePeriod
+    val lastColumnIndex = maturity
     result(::, lastColumnIndex) := profitAtTheMoment(zero, sharePriceLattice, strikePrice, putCallMultiplier, lastColumnIndex)
 
     val columnsFromPriorToLastOneDownToFirst = (lastColumnIndex - 1) to 0 by -1
