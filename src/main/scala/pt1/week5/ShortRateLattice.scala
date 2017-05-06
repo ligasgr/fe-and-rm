@@ -4,7 +4,7 @@ import breeze.linalg.DenseMatrix
 import common.Propagation
 
 object ShortRateLattice {
-  def generate(r0: Double, u: Double, d: Double, n: Int): DenseMatrix[Double] = {
-    Propagation.propagateValueForward(r0, u, d, n)
+  def generate(r0: Double, u: Double, d: Double, terms: Int): DenseMatrix[Double] = {
+    Propagation.propagateValueForward(r0, u, d, terms + 1)
   }
 }

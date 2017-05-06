@@ -8,7 +8,7 @@ class ShortRateLatticeSpec extends FunSuite with MatrixMatchers {
 
   test("lattice is as expected") {
     assertMatricesEqual(
-      ShortRateLattice.generate(6.0d, 1.25d, 0.9d, 6),
+      ShortRateLattice.generate(6.0d, 1.25d, 0.9d, 5),
       DenseMatrix(
         (6.00d, 5.40d, 4.86d, 4.37d, 3.94d, 3.54d),
         (0.00d, 7.50d, 6.75d, 6.08d, 5.47d, 4.92d),
