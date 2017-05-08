@@ -4,6 +4,12 @@ import breeze.linalg.{DenseMatrix, DenseVector}
 
 object BondPricing {
   def calculate(shortRateLattice: DenseMatrix[Double], faceValue: Double, coupon: Double = 0.0d, maturity: Int, q: Double, p: Double) = {
+    val result: DenseMatrix[Double] = calculatePricingMatrix(shortRateLattice, faceValue, coupon, maturity, q, p)
+
+    result(0, 0)
+  }
+
+  def calculatePricingMatrix(shortRateLattice: DenseMatrix[Double], faceValue: Double, coupon: Double, maturity: Int, q: Double, p: Double): DenseMatrix[Double] = {
     val result = DenseMatrix.zeros[Double](maturity + 1, maturity + 1)
     val rateLattice = shortRateLattice + 1.0d
     val lastColumnIndex = maturity
@@ -17,7 +23,6 @@ object BondPricing {
       val currentColumn = (((previousColumnShiftedOneDown * q) + (previousColumn * p)) / rateLattice(::, i)) + couponValue
       result(::, i) += currentColumn
     }
-
-    result(0, 0)
+    result
   }
 }
