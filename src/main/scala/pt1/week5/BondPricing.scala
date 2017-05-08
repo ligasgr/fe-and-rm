@@ -3,7 +3,7 @@ package pt1.week5
 import breeze.linalg.{DenseMatrix, DenseVector}
 
 object BondPricing {
-  def calculate(shortRateLattice: DenseMatrix[Double], faceValue: Double, coupon: Double, maturity: Int, q: Double, p: Double) = {
+  def calculate(shortRateLattice: DenseMatrix[Double], faceValue: Double, coupon: Double = 0.0d, maturity: Int, q: Double, p: Double) = {
     val result = DenseMatrix.zeros[Double](maturity + 1, maturity + 1)
     val rateLattice = shortRateLattice + 1.0d
     val lastColumnIndex = maturity
