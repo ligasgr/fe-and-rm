@@ -3,7 +3,7 @@ package pt1.week5
 import breeze.linalg.{DenseMatrix, DenseVector}
 
 object ForwardPricing {
-  def calculate(shortRateLattice: DenseMatrix[Double], noCouponPricingMatrix: DenseMatrix[Double], cashAccountValue: Double, maturity: Int, q: Double, p: Double) = {
+  def calculate(shortRateLattice: DenseMatrix[Double], noCouponPricingMatrix: DenseMatrix[Double], cashAccountValue: Double, maturity: Int, q: Double, p: Double): Double = {
     val n = maturity + 1
     val result = DenseMatrix.zeros[Double](n, n)
     val rateLattice = shortRateLattice + 1.0d
